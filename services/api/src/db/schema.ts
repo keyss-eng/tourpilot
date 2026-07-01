@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, index, uniqueIndex, customType } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
 const customTimestamp = customType<{ data: Date; driverData: string }>({
   dataType() {
@@ -108,6 +109,10 @@ export const tours = sqliteTable('tours', {
   structureHashIdx: index('structure_hash_idx').on(table.projectId, table.contextKey, table.structureHash),
   countHashIdx: index('count_hash_idx').on(table.projectId, table.contextKey, table.countHash),
   semanticHashIdx: index('semantic_hash_idx').on(table.projectId, table.contextKey, table.semanticHash),
+
+  oneActiveTourPerContextIdx: uniqueIndex('one_active_tour_per_context_idx')
+    .on(table.projectId, table.contextKey)
+    .where(sql`${table.isActive} = 1`),
 }));
 
 // ---------------------------------------------------------------------------

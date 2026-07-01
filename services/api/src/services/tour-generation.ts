@@ -602,7 +602,32 @@ export async function generateTourWithGuards(params: {
       updatedAt: new Date(),
     });
 
-    await db.batch([updateQuery, insertQuery]);
+    try {
+      await db.batch([updateQuery, insertQuery]);
+    } catch (err: any) {
+      if (err.message?.includes('UNIQUE constraint failed') || err.message?.includes('one_active_tour_per_context_idx')) {
+        const winner = await db.select({
+          id: tours.id,
+          totalSteps: tours.totalSteps,
+        }).from(tours)
+          .where(and(
+            eq(tours.projectId, projectId),
+            eq(tours.contextKey, contextKey),
+            eq(tours.isActive, true)
+          ))
+          .get();
+        if (winner) {
+          return {
+            success: true,
+            tourId: winner.id,
+            stepsCount: getStepsCount(winner as any),
+            regenerated: false,
+            source: 'race_resolved',
+          };
+        }
+      }
+      throw err;
+    }
 
     // [BILLING] one billable + cost row, plus a human-readable audit event.
     const fullLog = Promise.all([
