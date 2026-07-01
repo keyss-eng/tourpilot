@@ -1,0 +1,56 @@
+name: Deploy SDK + API
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Read SDK version
+        id: version
+        run: echo "version=$(node -p "require('./packages/sdktoolkit/package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Build SDK
+        run: npm run build --workspace packages/sdktoolkit
+
+      - name: Prepare deploy folder
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p deploy/v${VERSION} deploy/latest
+          cp packages/sdktoolkit/dist/* deploy/v${VERSION}/
+          cp packages/sdktoolkit/dist/* deploy/latest/
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy deploy --project-name=tourpilot --commit-dirty=true
+
+  deploy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - working-directory: services/api
+        run: npm ci
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/api
+          command: deploy
