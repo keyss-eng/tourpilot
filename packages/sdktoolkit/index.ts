@@ -277,7 +277,7 @@ async function fetchTourWithRetry(
   }
 
   const pendingKey = getStorageKey(apiClient.config.apiKey, 'pending_check');
-  sessionStorage.setItem(pendingKey, apiClient.config.contextKey);
+  sessionStorage.setItem(pendingKey, apiClient.config.contextKey!);
   logger.info('Tour not ready after generation — will retry on next visit.');
   return null;
 }
@@ -763,7 +763,7 @@ export const AITour = {
 
     await loadRuntimeSelectors(config);
     await waitForDomIdle(config.domIdleMs, config.domIdleMaxWait);
-    await startTourForRoute(apiClient, config.contextKey, config);
+    await startTourForRoute(apiClient, config.contextKey!, config);
 
     // CHANGE: DynamicContentWatcher's constructor now takes a
     // DynamicContentWatcherOptions object as its 3rd argument instead of a
@@ -773,7 +773,7 @@ export const AITour = {
       () => { if (activePlayer) { activePlayer.dismiss(); activePlayer = null; } },
       { debounceMs: config.watcherDebounceMs }
     );
-    activeDynamicWatcher.watch(config.contextKey);
+    activeDynamicWatcher.watch(config.contextKey!);
 
     activeSpaObserver = new SPAObserver(
       async (newPath: string) => {
@@ -840,9 +840,115 @@ export const AITour = {
   }
 };
 
+function parseDataset(dataset: DOMStringMap): Partial<AITourConfig> {
+  const config: any = {};
+  for (const [key, rawValue] of Object.entries(dataset)) {
+    if (rawValue === undefined) continue;
+
+    // Keep core identification strings as raw strings to avoid precision loss or type issues
+    if (['userId', 'apiKey', 'contextKey', 'apiUrl', 'uiVersion'].includes(key)) {
+      config[key] = rawValue;
+      continue;
+    }
+
+    if (rawValue === 'true') {
+      config[key] = true;
+      continue;
+    }
+    if (rawValue === 'false') {
+      config[key] = false;
+      continue;
+    }
+
+    const num = Number(rawValue);
+    if (!isNaN(num) && rawValue.trim() !== '') {
+      config[key] = num;
+      continue;
+    }
+
+    try {
+      if ((rawValue.startsWith('[') && rawValue.endsWith(']')) || (rawValue.startsWith('{') && rawValue.endsWith('}'))) {
+        config[key] = JSON.parse(rawValue);
+        continue;
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+
+    if (['excludeSelectors', 'includeZones', 'skipPaths', 'allowedPaths'].includes(key)) {
+      config[key] = rawValue.split(',').map(s => s.trim()).filter(Boolean);
+      continue;
+    }
+
+    config[key] = rawValue;
+  }
+  return config;
+}
+
+let isInitialized = false;
+let currentApiKey: string | undefined = undefined;
+let lastConfigStr = '';
+
+function autoInit() {
+  if (typeof window === 'undefined') return;
+
+  const script = document.querySelector('script[data-api-key]') as HTMLScriptElement;
+  if (!script) return;
+
+  const runInit = () => {
+    const config = parseDataset(script.dataset);
+    const hasUserId = config.userId && typeof config.userId === 'string' && config.userId.trim() !== '';
+
+    if (hasUserId) {
+      const configStr = JSON.stringify({
+        apiKey: config.apiKey,
+        userId: config.userId,
+        contextKey: config.contextKey || window.location.pathname,
+        uiVersion: config.uiVersion
+      });
+
+      if (isInitialized && configStr === lastConfigStr) {
+        return;
+      }
+      lastConfigStr = configStr;
+
+      if (isInitialized) {
+        AITour.destroy(currentApiKey);
+      }
+      currentApiKey = config.apiKey;
+      AITour.init(config).catch(err => {
+        logger.error('[AITour] Auto-initialization failed:', err);
+      });
+      isInitialized = true;
+    } else {
+      logger.info('[AITour] Auto-init waiting for data-user-id attribute to be set.');
+    }
+  };
+
+  runInit();
+
+  const observer = new MutationObserver((mutations) => {
+    let shouldReInit = false;
+    for (const mutation of mutations) {
+      if (mutation.type === 'attributes' && mutation.attributeName?.startsWith('data-')) {
+        shouldReInit = true;
+        break;
+      }
+    }
+    if (shouldReInit) {
+      runInit();
+    }
+  });
+
+  observer.observe(script, {
+    attributes: true,
+  });
+}
+
 // When loaded directly in a browser via a <script> tag (CDN/IIFE build), expose
 // the SDK as `window.AITour` so clients can call `AITour.init(...)` without any
 // import. No-op under SSR / module bundlers (guarded by `typeof window`).
 if (typeof window !== 'undefined') {
   (window as any).AITour = AITour;
+  autoInit();
 }

@@ -24,7 +24,7 @@ export class ApiClient {
     const initialDelay = 300;
 
     const params = new URLSearchParams({
-      contextKey: this.config.contextKey,
+      contextKey: this.config.contextKey!,
       userId:     this.config.userId,
       ...(this.config.uiVersion ? { uiVersion: this.config.uiVersion } : {})
     });

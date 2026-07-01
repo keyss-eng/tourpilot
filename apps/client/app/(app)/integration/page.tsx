@@ -7,7 +7,7 @@ import { QueryState } from '@/components/QueryState';
 import { useMe } from '@/hooks/useDashboard';
 import { cn } from '@/lib/cn';
 
-const CDN = 'https://cdn.jsdelivr.net/npm/aitour-core@1.0.22/dist/index.global.js';
+const CDN = 'https://tourpilot.pages.dev/v1.0.22/index.global.js';
 
 type Tab = 'html' | 'react' | 'wordpress';
 
@@ -18,60 +18,37 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 function htmlSnippet(apiKey: string) {
-  return `<script src="${CDN}"></script>
-<script>
-  AITour.init({
-    apiKey: "${apiKey}",
-    userId: YOUR_USER_ID,            // your logged-in user's id
-    contextKey: location.pathname,   // the current page
-  });
-</script>`;
+  return `<script
+  src="${CDN}"
+  data-api-key="${apiKey}"
+  data-user-id="YOUR_USER_ID"
+></script>`;
 }
 
 function reactSnippet(apiKey: string) {
-  return `// 1) Load the SDK once — e.g. in app/layout.tsx
-import Script from "next/script";
+  return `import Script from "next/script";
 
-<Script src="${CDN}" strategy="lazyOnload" />
-
-// 2) Init with your logged-in user (client component)
-"use client";
-import { useEffect } from "react";
-import { usePathname } from "next/navigation";
-
-export function AITourInit({ userId }: { userId: string }) {
-  const pathname = usePathname();
-  useEffect(() => {
-    const AITour = (window as any).AITour;
-    if (!AITour || !userId) return;
-    AITour.init({
-      apiKey: "${apiKey}",
-      userId,
-      contextKey: pathname,
-    });
-  }, [pathname, userId]);
-  return null;
-}
-
-// 3) Render it in your layout, passing the real user id:
-//    <AITourInit userId={currentUser.id} />`;
+// Add to your root layout (e.g. app/layout.tsx)
+<Script
+  src="${CDN}"
+  data-api-key="${apiKey}"
+  data-user-id={currentUser.id}
+  strategy="lazyOnload"
+/>`;
 }
 
 function wordpressSnippet(apiKey: string) {
   return `<!-- Add to your theme's footer.php, before </body> -->
-<script src="${CDN}"></script>
-<script>
-  AITour.init({
-    apiKey: "${apiKey}",
-    userId: "<?php echo get_current_user_id(); ?>",
-    contextKey: location.pathname,
-  });
-</script>`;
+<script
+  src="${CDN}"
+  data-api-key="${apiKey}"
+  data-user-id="<?php echo get_current_user_id(); ?>"
+></script>`;
 }
 
 const NOTES: Record<Tab, string> = {
   html: 'Paste before </body>. Replace YOUR_USER_ID with your logged-in user’s id (any unique value).',
-  react: 'For SPAs with login. The component re-inits on route change and passes the real user id (accurate active-user billing).',
+  react: 'Add this in your root layout. The SDK automatically listens for changes to data-user-id dynamically.',
   wordpress: 'Paste into footer.php. get_current_user_id() returns 0 for guests — that’s fine for anonymous visitors.',
 };
 
@@ -84,14 +61,14 @@ const STEPS: Record<Tab, string[]> = {
     'Replace YOUR_USER_ID with your logged-in user’s id (or any unique value for guests).',
   ],
   react: [
-    'Add the <Script> tag to your root layout (e.g. app/layout.tsx).',
-    'Create a file components/AITourInit.tsx and paste the component below.',
-    'Render <AITourInit userId={currentUser.id} /> in your layout, passing your real user id.',
+    'Copy the code below.',
+    'Include the <Script> tag in your root layout (e.g. app/layout.tsx).',
+    'The SDK will automatically read config options and react to user changes.',
   ],
   wordpress: [
     'Open your active theme’s footer.php (Appearance → Theme File Editor).',
     'Paste the code below just before the </body> tag.',
-    'Done — get_current_user_id() fills the user id automatically.',
+    'Done — the current user ID is dynamically populated.',
   ],
 };
 

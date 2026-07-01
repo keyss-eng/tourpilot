@@ -1,7 +1,7 @@
 export interface AITourConfig {
   apiKey: string;
   userId: string;
-  contextKey: string;
+  contextKey?: string;
   apiUrl?: string;
   // [AUTO-REGEN] Host app's UI build/version (e.g. build id or git commit). When
   // this changes, the saved tour for a page is auto-regenerated fresh. Leave

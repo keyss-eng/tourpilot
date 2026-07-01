@@ -151,6 +151,43 @@ function getStepsCount(tour: { totalSteps: number | null; stepsJson?: string }):
   try { return JSON.parse(tour.stepsJson || '[]').length; } catch { return 0; }
 }
 
+async function reactivateTour(
+  db: ReturnType<typeof getDb>,
+  kv: KVNamespace,
+  kvCacheKey: string,
+  projectId: string,
+  contextKey: string,
+  matchedTour: { id: string; totalSteps: number | null },
+  payloadHash: string
+): Promise<void> {
+  const deactivateQuery = db.update(tours)
+    .set({ isActive: false })
+    .where(and(
+      eq(tours.projectId, projectId),
+      eq(tours.contextKey, contextKey),
+      eq(tours.isActive, true)
+    ));
+  const activateQuery = db.update(tours)
+    .set({ isActive: true, updatedAt: new Date() })
+    .where(eq(tours.id, matchedTour.id));
+
+  await db.batch([deactivateQuery, activateQuery]);
+
+  await db.update(userProgress)
+    .set({ status: 'pending', updatedAt: new Date() })
+    .where(and(
+      eq(userProgress.tourId, matchedTour.id),
+      inArray(userProgress.status, ['completed', 'dismissed'])
+    ))
+    .run();
+
+  await kv.put(kvCacheKey, JSON.stringify({
+    tourId: matchedTour.id,
+    stepsCount: getStepsCount(matchedTour as any),
+    payloadHash,
+  }), { expirationTtl: 3600 });
+}
+
 export async function generateTourWithGuards(params: {
   db: ReturnType<typeof getDb>;
   kv: KVNamespace;
@@ -292,6 +329,16 @@ export async function generateTourWithGuards(params: {
     // Guard 1: payloadHash Match (exact same payload already generated)
     const payloadMatch = candidateTours.find(t => t.payloadHash === payloadHash);
     if (payloadMatch) {
+      if (!payloadMatch.isActive) {
+        await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, payloadMatch, payloadHash);
+        return {
+          success: true,
+          tourId: payloadMatch.id,
+          stepsCount: getStepsCount(payloadMatch as any),
+          regenerated: true,
+          source: 'payload_cache_reactivated',
+        };
+      }
       await kv.put(kvCacheKey, JSON.stringify({
         tourId: payloadMatch.id,
         stepsCount: getStepsCount(payloadMatch as any),
@@ -322,7 +369,7 @@ export async function generateTourWithGuards(params: {
       }
     }
 
-    // Guard 2: versionHash Match (active tour, same logical structure)
+    // Guard 2: versionHash Match (same logical structure)
     const hashableSchema = sanitizedSchema.map((item: any) => ({
       tag: item.tag,
       text: item.text?.slice(0, 40) || '',
@@ -332,8 +379,19 @@ export async function generateTourWithGuards(params: {
     const calculatedVersionHash = await computeContentHash(JSON.stringify(hashableSchema));
     const versionHash = passedVersionHash || calculatedVersionHash;
 
-    if (existingTour && existingTour.versionHash === versionHash) {
-      return hitCache(existingTour, 'version_cache');
+    const versionMatch = candidateTours.find(t => t.versionHash === versionHash);
+    if (versionMatch) {
+      if (!versionMatch.isActive) {
+        await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, versionMatch, payloadHash);
+        return {
+          success: true,
+          tourId: versionMatch.id,
+          stepsCount: getStepsCount(versionMatch as any),
+          regenerated: true,
+          source: 'version_cache_reactivated',
+        };
+      }
+      return hitCache(versionMatch, 'version_cache');
     }
 
     // Guard 3: versionHashWithFp Match (layout/fingerprint-aware)
@@ -349,6 +407,16 @@ export async function generateTourWithGuards(params: {
 
       const existingTourWithFp = candidateTours.find(t => t.versionHashWithFp === versionHashWithFp);
       if (existingTourWithFp) {
+        if (!existingTourWithFp.isActive) {
+          await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, existingTourWithFp, payloadHash);
+          return {
+            success: true,
+            tourId: existingTourWithFp.id,
+            stepsCount: getStepsCount(existingTourWithFp as any),
+            regenerated: true,
+            source: 'layout_cache_reactivated',
+          };
+        }
         return hitCache(existingTourWithFp, 'layout_cache');
       }
     }
@@ -357,6 +425,16 @@ export async function generateTourWithGuards(params: {
     const structureHash = await computeStructureHash(sanitizedSchema);
     const structureMatch = candidateTours.find(t => t.structureHash === structureHash);
     if (structureMatch) {
+      if (!structureMatch.isActive) {
+        await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, structureMatch, payloadHash);
+        return {
+          success: true,
+          tourId: structureMatch.id,
+          stepsCount: getStepsCount(structureMatch as any),
+          regenerated: true,
+          source: 'structure_cache_reactivated',
+        };
+      }
       return hitCache(structureMatch, 'structure_cache');
     }
 
@@ -417,6 +495,16 @@ export async function generateTourWithGuards(params: {
       const countHash = await computeCountHash(sanitizedSchema);
       const countMatch = candidateTours.find(t => t.countHash === countHash);
       if (countMatch) {
+        if (!countMatch.isActive) {
+          await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, countMatch, payloadHash);
+          return {
+            success: true,
+            tourId: countMatch.id,
+            stepsCount: getStepsCount(countMatch as any),
+            regenerated: true,
+            source: 'count_cache_reactivated',
+          };
+        }
         return hitCache(countMatch, 'count_cache');
       }
 
@@ -424,6 +512,16 @@ export async function generateTourWithGuards(params: {
       const semanticHash = await computeSemanticHash(sanitizedSchema);
       const semanticMatch = candidateTours.find(t => t.semanticHash === semanticHash);
       if (semanticMatch) {
+        if (!semanticMatch.isActive) {
+          await reactivateTour(db, kv, kvCacheKey, projectId, contextKey, semanticMatch, payloadHash);
+          return {
+            success: true,
+            tourId: semanticMatch.id,
+            stepsCount: getStepsCount(semanticMatch as any),
+            regenerated: true,
+            source: 'semantic_cache_reactivated',
+          };
+        }
         return hitCache(semanticMatch, 'semantic_cache');
       }
 

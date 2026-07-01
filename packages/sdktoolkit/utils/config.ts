@@ -7,14 +7,20 @@ export function validateConfig(config: Partial<AITourConfig>): AITourConfig {
   if (!config.userId) {
     throw new Error('[AITour] Initialization failed: Missing "userId".');
   }
-  if (!config.contextKey) {
-    throw new Error('[AITour] Initialization failed: Missing "contextKey".');
+
+  let contextKey = config.contextKey;
+  if (!contextKey) {
+    if (typeof window !== 'undefined' && window.location) {
+      contextKey = window.location.pathname;
+    } else {
+      throw new Error('[AITour] Initialization failed: Missing "contextKey".');
+    }
   }
 
   return {
     apiKey:     config.apiKey,
     userId:     config.userId,
-    contextKey: config.contextKey,
+    contextKey,
     apiUrl:     config.apiUrl || 'https://aitour-api.vishalkumar-9ca.workers.dev/api/v1',
     excludeSelectors: config.excludeSelectors ?? [],
     // ✅ Default is [] (empty = no zone filtering — scan all zones).
