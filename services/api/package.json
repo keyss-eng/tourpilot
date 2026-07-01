@@ -1,0 +1,21 @@
+{
+  "name": "@aitour/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev --port 8787 --ip 127.0.0.1",
+    "deploy": "wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.10",
+    "hono": "^4.3.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "drizzle-kit": "^0.21.4",
+    "wrangler": "^4.99.0"
+  }
+}

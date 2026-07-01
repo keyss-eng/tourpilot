@@ -1,0 +1,6 @@
+# Monorepo workspace members
+# (apps/client, apps/admin, packages/sdktoolkit, services/api).
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'services/*'

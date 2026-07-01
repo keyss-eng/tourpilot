@@ -1,0 +1,60 @@
+{
+
+  "name": "aitour-core",
+
+  "version": "1.0.22",
+
+  "description": "Lightweight client runtime engine for AITour",
+
+  "main": "./dist/index.js",
+
+  "module": "./dist/index.mjs",
+
+  "types": "./dist/index.d.ts",
+
+  "exports": {
+
+    ".": {
+
+      "types": "./dist/index.d.ts",
+
+      "import": "./dist/index.mjs",
+
+      "require": "./dist/index.js"
+
+    }
+
+  },
+
+  "files": [
+
+    "dist"
+
+  ],
+
+  "scripts": {
+
+    "build": "tsup index.ts --format cjs,esm,iife --global-name _AITourIIFE --dts --clean",
+
+    "dev": "tsup index.ts --format cjs,esm,iife --global-name _AITourIIFE --dts --watch"
+
+  },
+
+  "devDependencies": {
+
+    "tsup": "^8.5.1",
+
+    "typescript": "^5.9.3"
+
+  },
+
+  "engines": {
+
+    "node": ">=18"
+
+  },
+
+  "sideEffects": false
+
+}
+

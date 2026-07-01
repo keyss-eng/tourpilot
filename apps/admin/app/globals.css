@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: theme('colors.bg');
+  color: theme('colors.text');
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Native controls (date/month picker, calendar icon, dropdowns) render dark */
+  color-scheme: dark;
+}
+
+/* Make the month/date calendar indicator clearly visible on dark surfaces */
+input[type='month']::-webkit-calendar-picker-indicator,
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+* {
+  border-color: theme('colors.border');
+}
+
+/* Subtle, modern scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2f3d;
+  border-radius: 999px;
+  border: 2px solid theme('colors.bg');
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #353b4d;
+}
+
+/* Brand wordmark */
+.brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.brand .dot {
+  color: theme('colors.primary');
+}

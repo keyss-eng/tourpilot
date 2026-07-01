@@ -1,0 +1,1 @@
+ALTER TABLE `user_progress` ADD `seen_version` integer DEFAULT 0;

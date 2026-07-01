@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# services/api — local development secrets (Cloudflare Worker)
+#
+# 1. Copy this file to ".dev.vars" (same folder) and fill in real values.
+# 2. ".dev.vars" is gitignored — NEVER commit real secrets.
+# 3. For PRODUCTION, set each one with:  npx wrangler secret put <NAME>
+#
+# Non-secret config (AI_PROVIDER, ADMIN_EMAIL, rate limits, prices) already lives
+# in wrangler.toml [vars] — you do NOT need to repeat those here.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Admin-portal login (separate from DB accounts). Email is in wrangler.toml;
+# set the password here. Used to log into the admin app.
+ADMIN_PASSWORD=change-me-admin-password
+
+# Shared owner/machine secret for privileged routes (admin-portal API, etc.).
+ADMIN_SECRET=change-me-long-random-string
+
+# Signing key for dashboard/admin JWT sessions. Use a long random value.
+AUTH_JWT_SECRET=change-me-long-random-jwt-secret
+
+# Auth for the crawler / automation routes (tour generation by the crawler).
+CRAWLER_API_KEY=change-me-crawler-key
+
+# AI provider key — REQUIRED only for the provider set in wrangler.toml AI_PROVIDER.
+#   AI_PROVIDER = "gemini"     -> set GEMINI_API_KEY (current default)
+#   AI_PROVIDER = "groq"       -> set GROQ_API_KEY instead
+#   AI_PROVIDER = "cloudflare" -> no key (uses the built-in env.AI binding)
+GEMINI_API_KEY=change-me-gemini-api-key
+# GROQ_API_KEY=change-me-groq-api-key

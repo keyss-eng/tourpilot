@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme tokens (RGB triplets so Tailwind opacity modifiers keep working) ──
+   `:root` is light; `.dark` on <html> flips to dark (Tailwind `darkMode:'class'`,
+   so `dark:` variants work too). Dark is applied by default (see root layout). */
+:root {
+  --bg: 248 250 252;
+  --surface: 255 255 255;
+  --surface-2: 241 245 249;
+  --border: 226 232 240;
+  --muted: 100 116 139;
+  --text: 15 23 42;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: 6 13 26;
+  --surface: 8 17 32;
+  --surface-2: 15 31 55;
+  --border: 28 39 64;
+  --muted: 138 147 168;
+  --text: 238 241 247;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Calendar indicator: invert only in dark so it's visible on dark surfaces. */
+.dark input[type='month']::-webkit-calendar-picker-indicator,
+.dark input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+/* Subtle, modern scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 999px;
+  border: 2px solid rgb(var(--bg));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted) / 0.5);
+}
+
+/* Brand wordmark */
+.brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand .dot {
+  color: theme('colors.brand.500');
+}

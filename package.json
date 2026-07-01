@@ -1,0 +1,25 @@
+{
+  "name": "tourpilot",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TourPilot / AITour monorepo — SDK, backend API, and dashboards.",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "build:sdk": "npm run build --workspace packages/sdktoolkit"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

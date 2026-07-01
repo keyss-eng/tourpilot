@@ -1,0 +1,48 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1780892757729,
+      "tag": "0000_giant_agent_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781260654970,
+      "tag": "0001_free_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782187130647,
+      "tag": "0002_real_zodiak",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1782317139882,
+      "tag": "0003_unusual_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1782318510267,
+      "tag": "0004_sturdy_george_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1782322602528,
+      "tag": "0005_tough_maelstrom",
+      "breakpoints": true
+    }
+  ]
+}
